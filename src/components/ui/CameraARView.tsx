@@ -14,42 +14,63 @@ interface CameraARViewProps {
  * without a camera, or after the user denies permission).
  */
 export default function CameraARView({ children, fallbackClassName, videoElRef }: CameraARViewProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null) as React.MutableRefObject<HTMLVideoElement | null>;
+  const videoRef = useRef<HTMLVideoElement>(null) as React.MutableRefObject<HTMLVideoElement | null>;
   const streamRef = useRef<MediaStream | null>(null);
   const [state, setState] = useState<'starting' | 'live' | 'denied'>('starting');
+  const [attempt, setAttempt] = useState(0);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function start() {
-      let stream: MediaStream | null = null;
+      setState('starting');
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: false,
         });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        // Attach stream to the video element if it is already mounted; otherwise the ref
+        // callback below will attach it as soon as React renders the element.
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => {});
+        }
+        setState('live');
       } catch {
         if (!cancelled) setState('denied');
-        return;
       }
-      if (cancelled) {
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setState('live');
     }
 
     start();
+    // If the permission prompt lingers with no resolution, fall back silently.
+    const timeout = setTimeout(() => {
+      if (!cancelled && stateRef.current === 'starting') setState('denied');
+    }, 12000);
+
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, [attempt]);
+
+  // Attach the stream once the <video> element is actually mounted.
+  useEffect(() => {
+    if (state === 'live' && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [state]);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-surface-900">
@@ -59,6 +80,10 @@ export default function CameraARView({ children, fallbackClassName, videoElRef }
           ref={(el) => {
             videoRef.current = el;
             if (videoElRef) videoElRef.current = el;
+            if (el && streamRef.current) {
+              el.srcObject = streamRef.current;
+              el.play().catch(() => {});
+            }
           }}
           autoPlay
           muted
@@ -84,25 +109,30 @@ export default function CameraARView({ children, fallbackClassName, videoElRef }
         </div>
       )}
 
-      {/* Camera status chip */}
-      <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur px-2.5 py-1">
-        {state === 'live' ? (
-          <>
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-[10px] font-semibold text-white">LIVE</span>
-          </>
-        ) : state === 'denied' ? (
-          <>
-            <span className="w-2 h-2 rounded-full bg-white/40" />
-            <span className="text-[10px] font-semibold text-white/70">CAMERA OFF</span>
-          </>
-        ) : (
-          <>
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-[10px] font-semibold text-white/80">CAMERA…</span>
-          </>
-        )}
-      </div>
+      {/* Camera status chip + retry when denied */}
+      {state !== 'denied' ? (
+        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur px-2.5 py-1">
+          {state === 'live' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[10px] font-semibold text-white">LIVE</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[10px] font-semibold text-white/80">CAMERA…</span>
+            </>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={() => setAttempt((a) => a + 1)}
+          className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur px-3 py-1.5 ring-1 ring-white/20 hover:bg-black/80 transition"
+        >
+          <span className="w-2 h-2 rounded-full bg-white/40" />
+          <span className="text-[10px] font-semibold text-white">RETRY CAMERA</span>
+        </button>
+      )}
 
       {children}
     </div>
