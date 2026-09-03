@@ -38,8 +38,18 @@ export default function GasARScreen() {
 
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
-      {/* Live AR Camera View (falls back to simulated if unavailable) with gas-glow overlay */}
+      {/* Live AR Camera View (falls back to simulated if unavailable) with gas overlays */}
       <CameraARView>
+        {/* Swirling gas vapor cloud (thins as the gas is cleared) */}
+        <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center" style={{ opacity: Math.max(0, gasLevel / 100) }}>
+          <div className="relative w-56 h-56">
+            <div className="absolute inset-0 rounded-full anim-gas blur-2xl" style={{ backgroundColor: gasColor + '55' }} />
+            <div className="absolute top-6 left-6 w-20 h-16 rounded-full anim-gas blur-xl" style={{ backgroundColor: gasColor + '50', animationDelay: '1.2s' }} />
+            <div className="absolute bottom-10 right-4 w-24 h-20 rounded-full anim-gas blur-xl" style={{ backgroundColor: gasColor + '45', animationDelay: '2.1s' }} />
+            <div className="absolute bottom-16 left-2 w-16 h-14 rounded-full anim-gas blur-lg" style={{ backgroundColor: gasColor + '40', animationDelay: '0.5s' }} />
+          </div>
+        </div>
+        {/* Colored gas glow pulses */}
         <div className="absolute inset-0 pointer-events-none opacity-30 z-10">
           <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full blur-3xl animate-pulse" style={{ backgroundColor: gasColor + '40' }} />
           <div className="absolute bottom-1/3 left-1/3 w-28 h-28 rounded-full blur-2xl animate-pulse" style={{ backgroundColor: gasColor + '25', animationDelay: '0.8s' }} />

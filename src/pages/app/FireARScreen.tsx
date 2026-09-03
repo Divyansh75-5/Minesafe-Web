@@ -35,7 +35,19 @@ export default function FireARScreen() {
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
       {/* Live AR Camera View (falls back to simulated if unavailable) */}
-      <CameraARView />
+      <CameraARView>
+        {/* Simulated fire hazard overlay (shrinks as the fire is put out) */}
+        <div className="absolute inset-0 pointer-events-none z-10 flex items-end justify-center pb-28">
+          <div className="relative transition-all duration-700" style={{ width: 52 * (3 - step) * 0.9, height: 56 * (3 - step) * 0.9 }}>
+            <div className="absolute inset-0 rounded-full bg-orange-500/25 blur-2xl anim-glow-pulse" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-24 rounded-b-full bg-gradient-to-t from-amber-500 via-orange-500 to-yellow-300 anim-flame" style={{ animationDelay: '0s' }} />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-20 rounded-b-full bg-gradient-to-t from-orange-600 via-orange-400 to-amber-200 anim-flame" style={{ animationDelay: '0.25s' }} />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-16 rounded-b-full bg-gradient-to-t from-red-500 via-orange-400 to-yellow-200 anim-flame" style={{ animationDelay: '0.5s' }} />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-10 rounded-b-full bg-yellow-300/90 anim-flame" style={{ animationDelay: '0.1s' }} />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-4 rounded-full bg-amber-300/60 blur-md" />
+          </div>
+        </div>
+      </CameraARView>
 
       {/* HUD Top Bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3">
