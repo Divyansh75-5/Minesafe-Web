@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import CameraARView from '../../components/ui/CameraARView';
 
 export default function FireARScreen() {
   const { setScreen, t } = useApp();
@@ -33,22 +34,8 @@ export default function FireARScreen() {
 
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
-      {/* Simulated AR Camera View */}
-      <div className="absolute inset-0 bg-gradient-to-br from-surface-900 via-surface-800 to-surface-700">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/4 left-1/3 w-32 h-32 rounded-full bg-danger/30 blur-3xl animate-pulse" />
-          <div className="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-accent/20 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-        </div>
-        {/* Grid overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        {/* Scan lines */}
-        <div className="absolute inset-0 overflow-hidden opacity-10">
-          <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-accent to-transparent animate-[shimmer_3s_linear_infinite]" style={{ top: '40%' }} />
-        </div>
-      </div>
+      {/* Live AR Camera View (falls back to simulated if unavailable) */}
+      <CameraARView />
 
       {/* HUD Top Bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3">

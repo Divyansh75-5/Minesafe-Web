@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import CameraARView from '../../components/ui/CameraARView';
 
 export default function GasARScreen() {
   const { setScreen, t } = useApp();
@@ -37,17 +38,13 @@ export default function GasARScreen() {
 
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
-      {/* Simulated AR Camera View */}
-      <div className="absolute inset-0 bg-gradient-to-br from-surface-900 via-surface-800 to-surface-700">
-        <div className="absolute inset-0 opacity-15">
+      {/* Live AR Camera View (falls back to simulated if unavailable) with gas-glow overlay */}
+      <CameraARView>
+        <div className="absolute inset-0 pointer-events-none opacity-30 z-10">
           <div className="absolute top-1/3 right-1/4 w-40 h-40 rounded-full blur-3xl animate-pulse" style={{ backgroundColor: gasColor + '40' }} />
           <div className="absolute bottom-1/3 left-1/3 w-28 h-28 rounded-full blur-2xl animate-pulse" style={{ backgroundColor: gasColor + '25', animationDelay: '0.8s' }} />
         </div>
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-      </div>
+      </CameraARView>
 
       {/* HUD Top Bar */}
       <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-3">
