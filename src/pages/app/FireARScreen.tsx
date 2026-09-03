@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import CameraARView from '../../components/ui/CameraARView';
+import { useFireDetection } from '../../hooks/useFireDetection';
 
 export default function FireARScreen() {
   const { setScreen, t } = useApp();
   const [step, setStep] = useState(0);
   const [timer, setTimer] = useState(180);
+  const videoRef = useRef<HTMLVideoElement | null>(null) as React.MutableRefObject<HTMLVideoElement | null>;
+  const fire = useFireDetection(videoRef, true, 300);
 
   useEffect(() => {
     const iv = setInterval(() => setTimer(p => Math.max(0, p - 1)), 1000);
@@ -35,7 +38,25 @@ export default function FireARScreen() {
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
       {/* Live AR Camera View (falls back to simulated if unavailable) */}
-      <CameraARView>
+      <CameraARView videoElRef={videoRef}>
+        {/* Real-time fire detection bounding box */}
+        {fire.detected && fire.box && (
+          <div
+            className="absolute border-2 border-red-500 z-10 pointer-events-none"
+            style={{
+              left: `${fire.box.x * 100}%`,
+              top: `${fire.box.y * 100}%`,
+              width: `${fire.box.width * 100}%`,
+              height: `${fire.box.height * 100}%`,
+              boxShadow: '0 0 12px rgba(239,68,68,0.8)',
+            }}
+          >
+            <span className="absolute -top-6 left-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+              FIRE {(fire.box.confidence * 100).toFixed(0)}%
+            </span>
+          </div>
+        )}
+
         {/* Simulated fire hazard overlay (shrinks as the fire is put out) */}
         <div className="absolute inset-0 pointer-events-none z-10 flex items-end justify-center pb-28">
           <div className="relative transition-all duration-700" style={{ width: 52 * (3 - step) * 0.9, height: 56 * (3 - step) * 0.9 }}>
@@ -70,6 +91,16 @@ export default function FireARScreen() {
           <span className="text-white font-mono text-sm font-bold">{formatTime(timer)}</span>
         </div>
       </div>
+
+      {/* Fire detection alert banner */}
+      {fire.detected && (
+        <div className="absolute top-20 left-5 right-5 z-20">
+          <div className="hud-element border-red-500/50 !bg-red-950/80 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-red-400 font-bold text-xs uppercase tracking-wider">{t('high')} — FIRE DETECTED</span>
+          </div>
+        </div>
+      )}
 
       {/* Crosshair center */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">

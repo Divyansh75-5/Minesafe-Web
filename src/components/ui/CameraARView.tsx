@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface CameraARViewProps {
-  /** Optional extra elements rendered above the video feed (HUD rings, etc.). */
+  /** Optional extra elements rendered above the video feed (HUD rings, overlays, etc.). */
   children?: React.ReactNode;
   fallbackClassName?: string;
+  /** Optional mutable ref attached to the underlying <video> so callers can run detection on the live frame. */
+  videoElRef?: React.MutableRefObject<HTMLVideoElement | null>;
 }
 
 /**
@@ -11,8 +13,8 @@ interface CameraARViewProps {
  * Falls back to the existing "simulated AR" gradient otherwise (e.g. on desktop
  * without a camera, or after the user denies permission).
  */
-export default function CameraARView({ children, fallbackClassName }: CameraARViewProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export default function CameraARView({ children, fallbackClassName, videoElRef }: CameraARViewProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null) as React.MutableRefObject<HTMLVideoElement | null>;
   const streamRef = useRef<MediaStream | null>(null);
   const [state, setState] = useState<'starting' | 'live' | 'denied'>('starting');
 
@@ -54,7 +56,10 @@ export default function CameraARView({ children, fallbackClassName }: CameraARVi
       {/* Real camera feed when available */}
       {state === 'live' && (
         <video
-          ref={videoRef}
+          ref={(el) => {
+            videoRef.current = el;
+            if (videoElRef) videoElRef.current = el;
+          }}
           autoPlay
           muted
           playsInline
