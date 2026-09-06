@@ -37,7 +37,7 @@ export default function VerificationPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Certificate Verification</h1>
-          <p className="text-gray-600 mt-1">Verify MineSafe 26041 training certificates</p>
+          <p className="text-gray-600 mt-1">Verify SurakshaAR 26041 training certificates</p>
         </div>
 
         <div className="card">

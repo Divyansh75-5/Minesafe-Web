@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 
 export type LanguageCode = 'en' | 'hi' | 'sat';
 
@@ -24,6 +24,11 @@ export interface ModuleProgress {
   color: string;
 }
 
+export interface CompetencyResult {
+  label: string;
+  score: number; // 0..100
+}
+
 export interface AppState {
   screen: string;
   language: LanguageCode;
@@ -32,6 +37,8 @@ export interface AppState {
   overallScore: number;
   certificatesEarned: number;
   totalModules: number;
+  lastQuizScore: number;
+  lastQuizBreakdown: CompetencyResult[];
 }
 
 const defaultModules: ModuleProgress[] = [
@@ -64,6 +71,35 @@ const defaultModules: ModuleProgress[] = [
     color: '#eab308',
   },
 ];
+
+const STORAGE_KEY_PREFIX = 'minesafe-worker:';
+
+interface StoredWorkerData {
+  worker: WorkerProfile;
+  modules: ModuleProgress[];
+  overallScore: number;
+  certificatesEarned: number;
+  totalModules: number;
+  lastQuizScore: number;
+  lastQuizBreakdown: CompetencyResult[];
+}
+
+function loadStoredWorker(workerId: string): StoredWorkerData | null {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_PREFIX + workerId);
+    return raw ? (JSON.parse(raw) as StoredWorkerData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveStoredWorker(data: StoredWorkerData) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY_PREFIX + data.worker.workerId, JSON.stringify(data));
+  } catch {
+    // storage unavailable, ignore
+  }
+}
 
 const translations = {
   en: {
@@ -278,7 +314,7 @@ interface AppContextType {
   setLanguage: (lang: LanguageCode) => void;
   login: (workerId: string, name: string, industry: string) => void;
   startModule: (moduleId: string) => void;
-  completeModule: (moduleId: string) => void;
+  completeModule: (moduleId: string, score: number, breakdown: CompetencyResult[]) => void;
   t: (key: string) => string;
 }
 
@@ -293,7 +329,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     overallScore: 72,
     certificatesEarned: 0,
     totalModules: 2,
+    lastQuizScore: 0,
+    lastQuizBreakdown: [],
   });
+
+  // Persist everything for the logged-in worker on every state change.
+  useEffect(() => {
+    const w = state.worker;
+    if (!w) return;
+    saveStoredWorker({
+      worker: w,
+      modules: state.modules,
+      overallScore: state.overallScore,
+      certificatesEarned: state.certificatesEarned,
+      totalModules: state.totalModules,
+      lastQuizScore: state.lastQuizScore,
+      lastQuizBreakdown: state.lastQuizBreakdown,
+    });
+  }, [state]);
 
   const setScreen = useCallback((screen: string) => {
     setState(prev => ({ ...prev, screen }));
@@ -304,9 +357,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback((workerId: string, name: string, industry: string) => {
+    const saved = loadStoredWorker(workerId);
     setState(prev => ({
       ...prev,
-      worker: { workerId, name, industry, language: prev.language },
+      worker: saved
+        ? saved.worker
+        : { workerId, name, industry, language: prev.language },
+      modules: saved ? saved.modules : defaultModules,
+      overallScore: saved ? saved.overallScore : 0,
+      certificatesEarned: saved ? saved.certificatesEarned : 0,
+      totalModules: saved ? saved.totalModules : prev.totalModules,
+      lastQuizScore: saved ? saved.lastQuizScore : 0,
+      lastQuizBreakdown: saved ? saved.lastQuizBreakdown : [],
       screen: 'home',
     }));
   }, []);
@@ -323,7 +385,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const completeModule = useCallback((moduleId: string) => {
+  const completeModule = useCallback((moduleId: string, score: number, breakdown: CompetencyResult[]) => {
     setState(prev => ({
       ...prev,
       modules: prev.modules.map(m =>
@@ -333,6 +395,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ),
       overallScore: Math.min(100, prev.overallScore + 14),
       certificatesEarned: prev.certificatesEarned + 1,
+      lastQuizScore: score,
+      lastQuizBreakdown: breakdown,
       screen: 'result',
     }));
   }, []);

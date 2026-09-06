@@ -35,7 +35,7 @@ export default function AdminLayout() {
             🦺
           </div>
           <div>
-            <div className="font-bold text-sm">MineSafe 26041</div>
+            <div className="font-bold text-sm">SurakshaAR 26041</div>
             <div className="text-xs text-primary-300">Admin Dashboard</div>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function AdminLayout() {
           <button onClick={() => setSidebarOpen(!sidebarOpen)}>
             ☰
           </button>
-          <span className="font-medium">MineSafe Admin</span>
+          <span className="font-medium">SurakshaAR Admin</span>
         </header>
 
         <main className="p-6">

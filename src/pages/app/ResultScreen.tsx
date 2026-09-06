@@ -1,19 +1,18 @@
 import { useApp } from '../../context/AppContext';
 
 export default function ResultScreen() {
-  const { setScreen, t } = useApp();
+  const { setScreen, t, state } = useApp();
   const passingScore = 60;
   const total = 5;
-  const correct = 4;
+  const correct = state.lastQuizScore;
   const percentage = Math.round((correct / total) * 100);
   const passed = percentage >= passingScore;
 
-  const competencies = [
-    { label: 'Hazard Identification', score: 90, color: '#22c55e' },
-    { label: 'Equipment Selection', score: 80, color: '#22c55e' },
-    { label: 'Emergency Response', score: 70, color: '#eab308' },
-    { label: 'Safety Protocol', score: 85, color: '#22c55e' },
-  ];
+  const competencies = state.lastQuizBreakdown.map(c => ({
+    label: c.label,
+    score: c.score,
+    color: c.score >= 80 ? '#22c55e' : c.score >= 60 ? '#eab308' : '#ef4444',
+  }));
 
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-800 px-5 pt-8 pb-10">

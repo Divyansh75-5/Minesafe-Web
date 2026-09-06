@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 export type ColorSeverity = 'danger' | 'warning' | 'safe' | 'none';
 export type DominantClass = 'fire' | 'yellow' | 'green' | 'none';
+export type DetectionMode = 'fire' | 'gas';
 
 export interface HazardBox {
   x: number; // 0..1 (relative to video width)
@@ -46,11 +47,20 @@ const INITIAL: ColorAnalysis = {
 /**
  * Real-time color-based hazard classification running on a live <video> frame.
  *
- * The reading is NOT random/mock — it is derived from what the camera actually sees:
- *   - Orange / red fire tones  -> `danger`  (HIGH reading, ~75-100)
- *   - Yellow / amber tones     -> `warning` (MEDIUM reading, ~50-60)
- *   - Green indicator tones    -> `safe`    (LOW/SAFE reading, ~8-18)
- *   - Nothing matching         -> `safe` baseline
+ * The reading is NOT random/mock — it is derived from what the camera actually sees.
+ * Which colour matters depends on `mode`:
+ *
+ *   fire mode (default): only the ORANGE/RED fire intensity matters.
+ *     - strong red/orange -> `danger`  (HIGH reading)
+ *     - yellow/amber      -> `warning` (MEDIUM reading)
+ *     - green is IGNORED  (a safe tree/plant must NOT make the reading drop)
+ *     - nothing matching  -> LOW baseline
+ *
+ *   gas mode: only the GREEN indicator intensity matters — green = gas present,
+ *     so the MORE green, the HIGHER the gas reading.
+ *     - weak green -> LOW gas (green)
+ *     - stronger green -> progressively higher gas (yellow -> red)
+ *     - red/orange is IGNORED (does not count as gas)
  *
  * Returns a stable `ColorAnalysis` every `intervalMs`. The reading is smoothed
  * (lerped) so it settles convincingly on the detected colour instead of jumping
@@ -59,7 +69,8 @@ const INITIAL: ColorAnalysis = {
 export function useColorDetection(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   enabled = true,
-  intervalMs = 300
+  intervalMs = 300,
+  mode: DetectionMode = 'fire'
 ): ColorAnalysis {
   const [analysis, setAnalysis] = useState<ColorAnalysis>(INITIAL);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -134,7 +145,26 @@ export function useColorDetection(
         let color = SAFE_COLOR;
         let box: HazardBox | null = null;
 
-        if (dangerPct >= 0.8) {
+        if (mode === 'gas') {
+          // Gas mode: green is the signal. More green -> more gas.
+          if (greenPct >= 1.2) {
+            severity = 'warning';
+            dominant = 'green';
+            targetReading = Math.min(100, 8 + greenPct * 1.8);
+            color =
+              targetReading > 60
+                ? DANGER_COLOR
+                : targetReading > 30
+                  ? WARNING_COLOR
+                  : SAFE_COLOR;
+          } else {
+            severity = 'safe';
+            dominant = 'green';
+            targetReading = 8;
+            color = SAFE_COLOR;
+          }
+        } else if (dangerPct >= 0.8) {
+          // Fire mode: only red/orange intensity matters. Green is ignored.
           severity = 'danger';
           dominant = 'fire';
           color = DANGER_COLOR;
@@ -151,11 +181,6 @@ export function useColorDetection(
           dominant = 'yellow';
           color = WARNING_COLOR;
           targetReading = 50 + Math.min(10, yellowPct);
-        } else if (greenPct >= 1.2) {
-          severity = 'safe';
-          dominant = 'green';
-          color = SAFE_COLOR;
-          targetReading = 8 + Math.min(10, greenPct);
         }
 
         prevReading.current = Math.round(lerp(prevReading.current, targetReading, 0.35));
@@ -179,7 +204,7 @@ export function useColorDetection(
     return () => {
       if (raf) clearTimeout(raf);
     };
-  }, [videoRef, enabled, intervalMs]);
+  }, [videoRef, enabled, intervalMs, mode]);
 
   return analysis;
 }

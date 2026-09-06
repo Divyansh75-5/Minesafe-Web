@@ -29,7 +29,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md card">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
-          <p className="text-gray-600 mt-1">MineSafe 26041 Dashboard</p>
+          <p className="text-gray-600 mt-1">SurakshaAR 26041 Dashboard</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

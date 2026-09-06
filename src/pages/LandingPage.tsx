@@ -11,7 +11,7 @@ export default function LandingPage() {
                 <path d="M12 2l9 4v6c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V6l9-4z"/>
               </svg>
             </div>
-            <span className="text-xl font-bold text-white">MineSafe 26041</span>
+            <span className="text-xl font-bold text-white">SurakshaAR 26041</span>
           </div>
           <div className="flex gap-3">
             <Link to="/auth/login" className="px-4 py-2 text-white hover:bg-white/10 rounded-lg transition">

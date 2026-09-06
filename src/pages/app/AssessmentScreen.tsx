@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 
+export const QUIZ_CATEGORIES = [
+  'Hazard Identification',
+  'Equipment Selection',
+  'Emergency Response',
+  'Safety Protocol',
+];
+
 const questions = [
   {
     question: 'What is the first action when discovering a fire in a confined workspace?',
@@ -11,6 +18,7 @@ const questions = [
       'Call the supervisor only',
     ],
     correct: 1,
+    category: 'Emergency Response',
   },
   {
     question: 'Which extinguisher type is suitable for electrical fires?',
@@ -21,6 +29,7 @@ const questions = [
       'Sand bucket only',
     ],
     correct: 2,
+    category: 'Equipment Selection',
   },
   {
     question: 'What reading indicates an immediately dangerous gas concentration?',
@@ -31,6 +40,7 @@ const questions = [
       'Above 50 PPM for toxic gases',
     ],
     correct: 3,
+    category: 'Hazard Identification',
   },
   {
     question: 'When entering a confined space for rescue, what is mandatory?',
@@ -41,6 +51,7 @@ const questions = [
       'Wait for the gas to dissipate naturally',
     ],
     correct: 1,
+    category: 'Safety Protocol',
   },
   {
     question: 'What does the PASS technique stand for in fire extinguisher use?',
@@ -51,6 +62,7 @@ const questions = [
       'Press, Aim, Spray, Secure',
     ],
     correct: 0,
+    category: 'Equipment Selection',
   },
 ];
 
@@ -60,6 +72,7 @@ export default function AssessmentScreen() {
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
+  const [categoryCorrect, setCategoryCorrect] = useState<Record<string, number>>({});
 
   const q = questions[currentQ];
   const isCorrect = selected === q.correct;
@@ -69,8 +82,18 @@ export default function AssessmentScreen() {
     if (answered) return;
     setSelected(idx);
     setAnswered(true);
-    if (idx === q.correct) setScore(s => s + 1);
+    if (idx === q.correct) {
+      setScore(s => s + 1);
+      setCategoryCorrect(prev => ({ ...prev, [q.category]: (prev[q.category] || 0) + 1 }));
+    }
   };
+
+  const buildBreakdown = () =>
+    QUIZ_CATEGORIES.map(cat => {
+      const total = questions.filter(cq => cq.category === cat).length;
+      const correctCount = categoryCorrect[cat] || 0;
+      return { label: cat, score: Math.round((correctCount / total) * 100) };
+    });
 
   const handleNext = () => {
     if (currentQ < questions.length - 1) {
@@ -78,7 +101,11 @@ export default function AssessmentScreen() {
       setSelected(null);
       setAnswered(false);
     } else {
-      completeModule(state.modules.find(m => m.status === 'in-progress')?.id || 'fire');
+      completeModule(
+        state.modules.find(m => m.status === 'in-progress')?.id || 'fire',
+        score,
+        buildBreakdown()
+      );
     }
   };
 

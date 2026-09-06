@@ -14,7 +14,7 @@ export default function CertificateScreen() {
   const idx = Math.abs((worker?.workerId || 'w1').length * 31 + (worker?.name || '').length * 17) % seed.length;
   const cert = seed[idx];
   const certId = cert?.id || 'cert-fire-w1-s1';
-  const userName = cert?.userName || worker?.name || 'Worker';
+  const userName = worker?.name || cert?.userName || 'Worker';
   const moduleTitle = cert?.moduleTitle?.en || t('fireExplosion');
   const certNumber = cert?.certificateNumber || certId;
   const verifyUrl = `/verify/${certId}`;
@@ -42,7 +42,7 @@ export default function CertificateScreen() {
             </div>
 
             <h2 className="text-xl font-black text-white">{t('certificateOfCompletion')}</h2>
-            <p className="text-muted text-xs mt-1">MineSafe 26041 &middot; Government of Jharkhand</p>
+            <p className="text-muted text-xs mt-1">SurakshaAR 26041 &middot; Government of Jharkhand</p>
 
             <div className="my-6 border-t border-b border-white/[0.06] py-4">
               <p className="text-muted text-xs mb-1">{t('issuedTo')}</p>

@@ -28,7 +28,7 @@ export default function SplashScreen() {
         </div>
 
         <div className={`text-center transition-all duration-700 delay-200 ${phase >= 1 ? 'opacity-100' : 'opacity-0'}`}>
-          <h1 className="text-3xl font-black text-white tracking-tight">MineSafe</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">SurakshaAR</h1>
           <p className="text-accent font-bold text-sm mt-1 tracking-widest">26041</p>
         </div>
       </div>
