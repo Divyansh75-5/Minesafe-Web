@@ -63,11 +63,13 @@
     @apply bg-surface-600 rounded-2xl p-5;
     @apply border border-white/[0.06] shadow-card;
     @apply shadow-inner-glow;
+    @apply transition-all duration-300;
   }
 
   .surface-card-sm {
     @apply bg-surface-600 rounded-xl p-4;
     @apply border border-white/[0.06];
+    @apply transition-all duration-200;
   }
 
   .input-field {
@@ -106,6 +108,16 @@
 
   .nav-item-active {
     @apply text-accent;
+  }
+
+  .interactive-card {
+    @apply transition-all duration-300 ease-out;
+    @apply hover:-translate-y-1 hover:border-accent/30 hover:shadow-card;
+    @apply active:translate-y-0 active:scale-[0.985];
+  }
+
+  .screen-enter {
+    animation: screenEnter 280ms ease-out both;
   }
 }
 
@@ -149,3 +161,17 @@
   50% { opacity: 0.9; }
 }
 .anim-glow-pulse { animation: shimmerPulse 1.6s ease-in-out infinite; }
+
+@keyframes screenEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

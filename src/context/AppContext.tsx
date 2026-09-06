@@ -39,6 +39,10 @@ export interface AppState {
   totalModules: number;
   lastQuizScore: number;
   lastQuizBreakdown: CompetencyResult[];
+  lastCertificateId: string | null;
+  lastCertificateNumber: string | null;
+  lastCertificateIssuedAt: string | null;
+  lastCertificateModuleId: string | null;
 }
 
 const defaultModules: ModuleProgress[] = [
@@ -82,6 +86,10 @@ interface StoredWorkerData {
   totalModules: number;
   lastQuizScore: number;
   lastQuizBreakdown: CompetencyResult[];
+  lastCertificateId: string | null;
+  lastCertificateNumber: string | null;
+  lastCertificateIssuedAt: string | null;
+  lastCertificateModuleId: string | null;
 }
 
 function loadStoredWorker(workerId: string): StoredWorkerData | null {
@@ -99,6 +107,45 @@ function saveStoredWorker(data: StoredWorkerData) {
   } catch {
     // storage unavailable, ignore
   }
+}
+
+interface StoredCertificateRecord {
+  id: string;
+  certificateNumber: string;
+  userId: string;
+  userName: string;
+  moduleTitle: { en: string; hi: string; sat: string };
+  score: number;
+  maxScore: number;
+  percentage: number;
+  issuedAt: string;
+  qrCodeData: string;
+  qrCodeImageUrl: string;
+  pdfUrl: string;
+  verificationHash: string;
+  status: 'valid' | 'revoked' | 'expired';
+  issuedBy: string;
+}
+
+const CERTIFICATE_STORAGE_KEY_PREFIX = 'surakshaar-certificate:';
+
+function saveStoredCertificate(certificate: StoredCertificateRecord) {
+  try {
+    window.localStorage.setItem(
+      CERTIFICATE_STORAGE_KEY_PREFIX + certificate.id,
+      JSON.stringify(certificate)
+    );
+  } catch {
+    // storage unavailable, ignore
+  }
+}
+
+function makeCertificateNumber(workerId: string, moduleId: string, date: Date) {
+  const source = `${workerId}:${moduleId}`;
+  let hash = 0;
+  for (const char of source) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  const sequence = String((hash % 90000) + 10000);
+  return `SAR-26041-${date.getFullYear()}-${sequence}`;
 }
 
 const translations = {
@@ -331,6 +378,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     totalModules: 2,
     lastQuizScore: 0,
     lastQuizBreakdown: [],
+    lastCertificateId: null,
+    lastCertificateNumber: null,
+    lastCertificateIssuedAt: null,
+    lastCertificateModuleId: null,
   });
 
   // Persist everything for the logged-in worker on every state change.
@@ -345,7 +396,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       totalModules: state.totalModules,
       lastQuizScore: state.lastQuizScore,
       lastQuizBreakdown: state.lastQuizBreakdown,
+      lastCertificateId: state.lastCertificateId,
+      lastCertificateNumber: state.lastCertificateNumber,
+      lastCertificateIssuedAt: state.lastCertificateIssuedAt,
+      lastCertificateModuleId: state.lastCertificateModuleId,
     });
+
+    if (
+      state.lastCertificateId &&
+      state.lastCertificateNumber &&
+      state.lastCertificateIssuedAt &&
+      state.lastCertificateModuleId
+    ) {
+      const module = state.modules.find((item) => item.id === state.lastCertificateModuleId);
+      saveStoredCertificate({
+        id: state.lastCertificateId,
+        certificateNumber: state.lastCertificateNumber,
+        userId: w.workerId,
+        userName: w.name,
+        moduleTitle: {
+          en: module?.title || 'Safety Training',
+          hi: module?.titleHi || module?.title || 'Safety Training',
+          sat: module?.titleSat || module?.title || 'Safety Training',
+        },
+        score: state.lastQuizScore,
+        maxScore: 5,
+        percentage: Math.round((state.lastQuizScore / 5) * 100),
+        issuedAt: state.lastCertificateIssuedAt,
+        qrCodeData: state.lastCertificateId,
+        qrCodeImageUrl: '',
+        pdfUrl: '',
+        verificationHash: state.lastCertificateId,
+        status: 'valid',
+        issuedBy: 'SurakshaAR',
+      });
+    }
   }, [state]);
 
   const setScreen = useCallback((screen: string) => {
@@ -369,6 +454,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       totalModules: saved ? saved.totalModules : prev.totalModules,
       lastQuizScore: saved ? saved.lastQuizScore : 0,
       lastQuizBreakdown: saved ? saved.lastQuizBreakdown : [],
+      lastCertificateId: saved?.lastCertificateId || null,
+      lastCertificateNumber: saved?.lastCertificateNumber || null,
+      lastCertificateIssuedAt: saved?.lastCertificateIssuedAt || null,
+      lastCertificateModuleId: saved?.lastCertificateModuleId || null,
       screen: 'home',
     }));
   }, []);
@@ -386,17 +475,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeModule = useCallback((moduleId: string, score: number, breakdown: CompetencyResult[]) => {
+    const passed = Math.round((score / 5) * 100) >= 60;
+    const issuedAt = new Date();
     setState(prev => ({
       ...prev,
       modules: prev.modules.map(m =>
         m.id === moduleId
-          ? { ...m, status: 'completed', progress: 100, completedScenarios: m.totalScenarios }
+          ? passed
+            ? { ...m, status: 'completed', progress: 100, completedScenarios: m.totalScenarios }
+            : { ...m, status: 'in-progress' }
           : m
       ),
-      overallScore: Math.min(100, prev.overallScore + 14),
-      certificatesEarned: prev.certificatesEarned + 1,
+      overallScore: passed ? Math.min(100, prev.overallScore + 14) : prev.overallScore,
+      certificatesEarned: passed ? prev.certificatesEarned + 1 : prev.certificatesEarned,
       lastQuizScore: score,
       lastQuizBreakdown: breakdown,
+      lastCertificateId: passed
+        ? `surakshaar-${moduleId}-${issuedAt.getTime()}`
+        : prev.lastCertificateId,
+      lastCertificateNumber: passed
+        ? makeCertificateNumber(prev.worker?.workerId || 'worker', moduleId, issuedAt)
+        : prev.lastCertificateNumber,
+      lastCertificateIssuedAt: passed ? issuedAt.toISOString() : prev.lastCertificateIssuedAt,
+      lastCertificateModuleId: passed ? moduleId : prev.lastCertificateModuleId,
       screen: 'result',
     }));
   }, []);

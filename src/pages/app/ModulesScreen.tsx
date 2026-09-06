@@ -14,7 +14,7 @@ export default function ModulesScreen() {
         {modules.map((mod, i) => (
           <div
             key={mod.id}
-            className="surface-card overflow-hidden animate-slide-up"
+            className="surface-card interactive-card overflow-hidden animate-slide-up"
             style={{ animationDelay: `${i * 100}ms` }}
           >
             <div className="flex items-start gap-4 mb-4">
@@ -65,6 +65,7 @@ export default function ModulesScreen() {
 
             <button
               onClick={() => startModule(mod.id)}
+              aria-label={`${mod.title}: ${mod.status === 'completed' ? t('completed') : t('startTraining')}`}
               className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98]"
               style={{
                 backgroundColor: `${mod.color}15`,

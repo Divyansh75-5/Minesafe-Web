@@ -39,6 +39,9 @@ export async function verifyCertificate(
   }
 
   // Demo mode: search seeded certificates by id, number, or QR value.
+  const localCertificate = readLocalCertificate(id);
+  if (localCertificate) return summarize(localCertificate);
+
   const cert =
     demoCertificates.find((c) => c.id === id) ??
     demoCertificates.find((c) => c.certificateNumber === id) ??
@@ -48,6 +51,15 @@ export async function verifyCertificate(
     return { certificate: null, status: 'not-found' };
   }
   return summarize(cert);
+}
+
+function readLocalCertificate(id: string): Certificate | null {
+  try {
+    const raw = window.localStorage.getItem(`surakshaar-certificate:${id}`);
+    return raw ? (JSON.parse(raw) as Certificate) : null;
+  } catch {
+    return null;
+  }
 }
 
 function summarize(cert: Certificate): VerificationResult {

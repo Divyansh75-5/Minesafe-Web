@@ -2,22 +2,21 @@ import { useApp } from '../../context/AppContext';
 import BottomNav from '../../components/ui/BottomNav';
 import Header from '../../components/ui/Header';
 import { Link } from 'react-router-dom';
-import { demoCertificates } from '../../services/demoData';
+import { formatDate } from '../../utils/cn';
 
 export default function CertificatesListScreen() {
   const { state, setScreen, t } = useApp();
   const { certificatesEarned } = state;
 
-  // In demo mode show the real seeded, web-verifiable certificates so each one resolves.
-  const certs = certificatesEarned > 0
-    ? demoCertificates.map((c) => ({
-        id: c.id,
-        number: c.certificateNumber,
-        module: c.moduleTitle?.en || 'Safety Training',
-        date: new Date(c.issuedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-        score: c.percentage,
-        status: c.status as 'valid' | 'revoked' | 'expired',
-      }))
+  const certs = certificatesEarned > 0 && state.lastCertificateId && state.lastCertificateNumber
+    ? [{
+        id: state.lastCertificateId,
+        number: state.lastCertificateNumber,
+        module: state.modules.find((item) => item.id === state.lastCertificateModuleId)?.title || 'Safety Training',
+        date: formatDate(state.lastCertificateIssuedAt || undefined),
+        score: Math.round((state.lastQuizScore / 5) * 100),
+        status: 'valid' as const,
+      }]
     : [];
 
   return (
@@ -31,7 +30,7 @@ export default function CertificatesListScreen() {
               <Link
                 key={cert.id}
                 to={`/verify/${cert.id}`}
-                className="block surface-card cursor-pointer hover:bg-surface-500 transition-colors active:scale-[0.99] animate-slide-up"
+                className="block surface-card interactive-card cursor-pointer animate-slide-up"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
                 <div className="flex items-start gap-4">

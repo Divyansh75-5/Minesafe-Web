@@ -28,7 +28,7 @@ export default function LoginScreen() {
         <p className="text-muted text-sm mt-1">Enter your details to begin training</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="surface-card flex-1 flex flex-col gap-4">
         <div className="animate-slide-up" style={{ animationDelay: '50ms' }}>
           <label className="text-sm font-semibold text-subtle mb-2 block">{t('workerId')}</label>
           <input

@@ -45,7 +45,11 @@ function WorkerApp() {
     profile: <ProfileScreen />,
   };
 
-  return screens[state.screen] || <SplashScreen />;
+  return (
+    <div key={state.screen} className="screen-enter">
+      {screens[state.screen] || <SplashScreen />}
+    </div>
+  );
 }
 
 export default function App() {

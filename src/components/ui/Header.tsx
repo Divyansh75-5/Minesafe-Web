@@ -17,6 +17,7 @@ export default function Header({ title, showBack = false, rightAction, transpare
         {showBack && (
           <button
             onClick={() => setScreen('home')}
+            aria-label="Go back"
             className="p-2 -ml-2 rounded-xl text-subtle hover:text-white hover:bg-surface-500 transition-colors active:scale-95"
           >
             <Icon name="back" size={22} />

@@ -1,93 +1,135 @@
-import { useApp } from '../../context/AppContext';
-import Header from '../../components/ui/Header';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { demoCertificates } from '../../services/demoData';
+import { useApp } from '../../context/AppContext';
 import { buildVerifyUrl } from '../../utils/verifyUrl';
+
+const TEMPLATE_URL = '/assets/surakshaar-certificate-template.png';
 
 export default function CertificateScreen() {
   const { state, setScreen, t } = useApp();
+  const [showDetails, setShowDetails] = useState(false);
   const worker = state.worker;
-  // Deterministically pick a real seeded demo certificate so the verify link always resolves
-  // to a certificate that actually exists in demo mode.
-  const seed = demoCertificates;
-  const idx = Math.abs((worker?.workerId || 'w1').length * 31 + (worker?.name || '').length * 17) % seed.length;
-  const cert = seed[idx];
-  const certId = cert?.id || 'cert-fire-w1-s1';
-  const userName = worker?.name || cert?.userName || 'Worker';
-  const moduleTitle = cert?.moduleTitle?.en || t('fireExplosion');
-  const certNumber = cert?.certificateNumber || certId;
-  const verifyUrl = `/verify/${certId}`;
+  const module = state.modules.find((item) => item.id === state.lastCertificateModuleId);
+  const correct = state.lastQuizScore;
+  const percentage = Math.round((correct / 5) * 100);
+  const certId = state.lastCertificateId || `surakshaar-${worker?.workerId || 'worker'}`;
+  const certNumber = state.lastCertificateNumber || `SAR-26041-${new Date().getFullYear()}-00000`;
+  const issuedDate = state.lastCertificateIssuedAt || new Date().toISOString();
+  const userName = worker?.name || 'Worker';
+  const moduleTitle = module?.title || t('fireExplosion');
+  const issuedDateLabel = useMemo(() => formatIssuedDate(issuedDate), [issuedDate]);
 
   return (
-    <div className="mobile-shell flex flex-col min-h-screen bg-surface-800 px-5 pt-4 pb-10">
-      <Header title={t('certificateOfCompletion')} showBack />
-
-      <div className="flex-1 flex flex-col items-center justify-center py-4 animate-slide-up">
-        {/* Certificate Card */}
-        <div className="w-full max-w-sm rounded-3xl overflow-hidden" style={{
-          background: 'linear-gradient(135deg, #1a222c 0%, #0f1419 50%, #1a1f2e 100%)',
-          border: '1px solid rgba(249,115,22,0.2)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), 0 0 40px rgba(249,115,22,0.08)',
-        }}>
-          {/* Top accent bar */}
-          <div className="h-1.5 bg-gradient-to-r from-accent via-caution to-accent" />
-
-          <div className="p-8 text-center">
-            {/* Shield icon */}
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center mx-auto mb-4 shadow-glow-orange">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="m9 12 2 2 4-4" />
-              </svg>
-            </div>
-
-            <h2 className="text-xl font-black text-white">{t('certificateOfCompletion')}</h2>
-            <p className="text-muted text-xs mt-1">SurakshaAR 26041 &middot; Government of Jharkhand</p>
-
-            <div className="my-6 border-t border-b border-white/[0.06] py-4">
-              <p className="text-muted text-xs mb-1">{t('issuedTo')}</p>
-              <p className="text-white font-bold text-lg">{userName}</p>
-              <p className="text-muted text-xs mt-0.5">{worker?.workerId} &middot; {worker?.industry}</p>
-            </div>
-
-            <p className="text-muted text-xs mb-1">{t('forCompleting')}</p>
-            <p className="text-white font-semibold text-sm">{moduleTitle}</p>
-
-            <div className="mt-6 flex items-center justify-center gap-4">
-              {/* Real scannable QR linking to the (origin-aware) public verification page */}
-              <Link to={verifyUrl} aria-label="Verify certificate QR">
-                <QRCodeSVG
-                  value={buildVerifyUrl(certId)}
-                  size={88}
-                  bgColor="#ffffff"
-                  fgColor="#0f1419"
-                />
-              </Link>
-              <div className="text-left">
-                <p className="text-[10px] text-muted font-semibold uppercase tracking-wider">{t('certificateId')}</p>
-                <p className="text-white font-mono text-xs font-bold mt-0.5">{certNumber}</p>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <div className="w-2 h-2 rounded-full bg-safe animate-pulse" />
-                  <span className="text-safe text-[10px] font-bold">{t('valid')}</span>
-                </div>
-                <p className="text-[10px] text-muted mt-1">{t('verificationStatus')}</p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-surface-800 px-3 py-4 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-[900px]">
+        <div className="mb-4 flex items-center justify-between gap-3 print:hidden">
+          <button onClick={() => setScreen('home')} className="btn-secondary !w-auto !px-4">
+            Back
+          </button>
+          <p className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+            {t('certificateOfCompletion')}
+          </p>
+          <button onClick={() => window.print()} className="btn-primary !w-auto !px-4 text-xs">
+            Print / Save PDF
+          </button>
         </div>
-      </div>
 
-      <div className="space-y-3 animate-slide-up" style={{ animationDelay: '200ms' }}>
-        <Link to={verifyUrl} className="btn-primary flex items-center justify-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7,10 12,15 17,10" /><line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Verify Certificate Online
-        </Link>
-        <button onClick={() => setScreen('home')} className="btn-secondary">
-          {t('home')}
-        </button>
+        {/* The supplied artwork stays untouched; only its personal fields are overlaid. */}
+        <div className="group relative mx-auto aspect-[1184/1320] w-full overflow-hidden shadow-2xl transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
+          <img
+            src={TEMPLATE_URL}
+            alt="SurakshaAR certificate template"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+
+          {/* Name */}
+          <div className="absolute left-[28%] top-[33.5%] flex h-[6%] w-[46%] items-center justify-center bg-[#fdfdfb]/95 px-2 text-center">
+            <span className="font-serif text-[clamp(12px,4.2vw,48px)] font-bold leading-none text-[#0b342c]">
+              {userName}
+            </span>
+          </div>
+
+          {/* Module title */}
+          <div className="absolute left-[25%] top-[43.5%] flex h-[4.2%] w-[50%] items-center justify-center bg-[#fdfdfb]/95 px-2 text-center">
+            <span className="font-serif text-[clamp(8px,2.3vw,28px)] font-bold leading-none text-[#0b342c]">
+              {moduleTitle}
+            </span>
+          </div>
+
+          {/* Score */}
+          <div className="absolute left-[18.2%] top-[59.35%] flex h-[3.4%] w-[12.5%] items-center justify-center bg-[#fdfdfb]/95">
+            <span className="font-serif text-[clamp(10px,2.8vw,32px)] font-bold leading-none text-[#101820]">
+              {percentage}%
+            </span>
+          </div>
+
+          {/* Issued date */}
+          <div className="absolute left-[45.8%] top-[59.35%] flex h-[3.4%] w-[18.5%] items-center justify-center bg-[#fdfdfb]/95 px-1">
+            <span className="whitespace-nowrap font-serif text-[clamp(7px,1.8vw,22px)] font-bold leading-none text-[#101820]">
+              {issuedDateLabel}
+            </span>
+          </div>
+
+          {/* Certificate number */}
+          <div className="absolute left-[74.8%] top-[59.35%] flex h-[3.4%] w-[22%] items-center justify-start bg-[#fdfdfb]/95 px-1">
+            <span className="whitespace-nowrap font-serif text-[clamp(5px,1.25vw,16px)] font-bold leading-none text-[#101820]">
+              {certNumber}
+            </span>
+          </div>
+
+          {/* Dynamic QR replaces the sample QR in the reference artwork. */}
+          <Link
+            to={`/verify/${certId}`}
+            aria-label="Verify certificate QR"
+            className="absolute left-[42.1%] top-[63.65%] flex h-[14.5%] w-[16.7%] items-center justify-center rounded-[4%] bg-white p-[1.15%] transition duration-300 hover:scale-110 hover:shadow-[0_0_22px_rgba(34,197,94,0.55)]"
+          >
+            <QRCodeSVG value={buildVerifyUrl(certId)} size={256} className="h-full w-full" />
+          </Link>
+        </div>
+
+        <div className="mt-4 flex flex-wrap justify-center gap-2 print:hidden">
+          <Link to={`/verify/${certId}`} className="btn-secondary !w-auto !px-5 text-xs">
+            Verify Certificate Online
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowDetails((visible) => !visible)}
+            aria-expanded={showDetails}
+            className="btn-secondary !w-auto !px-5 text-xs"
+          >
+            {showDetails ? 'Hide Details' : 'View Details'}
+          </button>
+        </div>
+
+        {showDetails && (
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-surface-700/90 p-3 text-xs animate-slide-up print:hidden">
+            <Detail label="Issued to" value={userName} />
+            <Detail label="Score" value={`${percentage}%`} />
+            <Detail label="Issued date" value={issuedDateLabel} />
+            <Detail label="Certificate no." value={certNumber} />
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-black/15 px-3 py-2">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-muted">{label}</p>
+      <p className="mt-1 truncate font-semibold text-white" title={value}>{value}</p>
+    </div>
+  );
+}
+
+function formatIssuedDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }

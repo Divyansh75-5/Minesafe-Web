@@ -20,9 +20,12 @@ export default function BottomNav() {
             <button
               key={tab.id}
               onClick={() => setScreen(tab.id)}
-              className={`nav-item ${active ? 'nav-item-active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+              className={`nav-item group ${active ? 'nav-item-active' : ''}`}
             >
-              <Icon name={tab.icon} size={22} className={active ? 'text-accent' : ''} />
+              <span className={`rounded-xl px-3 py-1 transition-all duration-200 ${active ? 'bg-accent/10 shadow-glow-orange' : 'group-hover:bg-white/[0.04]'}`}>
+                <Icon name={tab.icon} size={22} className={active ? 'text-accent' : ''} />
+              </span>
               <span className={`text-[10px] font-semibold ${active ? 'text-accent' : 'text-muted'}`}>
                 {t(tab.labelKey)}
               </span>

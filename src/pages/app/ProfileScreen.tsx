@@ -3,7 +3,7 @@ import BottomNav from '../../components/ui/BottomNav';
 import Header from '../../components/ui/Header';
 
 export default function ProfileScreen() {
-  const { state, t } = useApp();
+  const { state, setScreen, t } = useApp();
   const { worker, modules, certificatesEarned, language } = state;
 
   const langNames: Record<string, string> = { en: 'English', hi: '\u0939\u093F\u0928\u094D\u0926\u0940', sat: 'Santali' };
@@ -16,7 +16,7 @@ export default function ProfileScreen() {
 
       <div className="px-5 pb-6 space-y-5">
         {/* Worker card */}
-        <div className="surface-card flex items-center gap-4 animate-slide-up">
+        <div className="surface-card interactive-card flex items-center gap-4 animate-slide-up">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent to-accent-dark flex items-center justify-center flex-shrink-0 shadow-glow-orange">
             <span className="text-xl font-black text-white">{worker?.name?.[0] || 'W'}</span>
           </div>
@@ -49,7 +49,7 @@ export default function ProfileScreen() {
         {/* Completed training */}
         <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">{t('completedTraining')}</h3>
-          <div className="surface-card">
+          <div className="surface-card interactive-card">
             {completedModules.length > 0 ? (
               <div className="space-y-3">
                 {completedModules.map((mod) => (
@@ -75,7 +75,7 @@ export default function ProfileScreen() {
         {/* Certificates */}
         <div className="animate-slide-up" style={{ animationDelay: '300ms' }}>
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">{t('certificates')}</h3>
-          <div className="surface-card">
+          <button type="button" onClick={() => setScreen('certificates')} className="surface-card interactive-card w-full text-left">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-caution/10 flex items-center justify-center flex-shrink-0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,12 +87,12 @@ export default function ProfileScreen() {
                 <p className="text-[10px] text-muted">Fire Safety Module</p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Language & Status */}
         <div className="animate-slide-up" style={{ animationDelay: '400ms' }}>
-          <div className="surface-card space-y-0 divide-y divide-white/[0.06]">
+          <div className="surface-card interactive-card space-y-0 divide-y divide-white/[0.06]">
             <div className="flex items-center justify-between py-3.5">
               <span className="text-sm text-subtle">{t('language')}</span>
               <span className="text-sm text-white font-semibold">{langNames[language] || language}</span>

@@ -47,14 +47,24 @@ export default function HomeScreen() {
             <h1 className="text-xl font-black text-white mt-0.5">{worker?.name || 'Worker'}</h1>
             <p className="text-muted text-xs mt-0.5">{worker?.workerId} &middot; {worker?.industry}</p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-surface-500 border border-white/[0.08] flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setScreen('profile')}
+            aria-label="Open profile"
+            className="w-12 h-12 rounded-2xl bg-surface-500 border border-white/[0.08] flex items-center justify-center transition-all hover:border-accent/50 hover:bg-accent/10 active:scale-95"
+          >
             <span className="text-lg font-bold text-accent">{worker?.name?.[0] || 'W'}</span>
-          </div>
+          </button>
         </div>
       </div>
 
       <div className="px-5 animate-slide-up">
-        <div className="surface-card flex items-center gap-5">
+        <button
+          type="button"
+          onClick={() => setScreen('modules')}
+          className="surface-card interactive-card flex w-full items-center gap-5 text-left"
+          aria-label="Open training modules"
+        >
           <ScoreRing score={overallScore} />
           <div className="flex-1">
             <p className="text-muted text-xs font-semibold uppercase tracking-wider">{t('safetyScore')}</p>
@@ -66,23 +76,23 @@ export default function HomeScreen() {
               />
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="px-5 mt-4 animate-slide-up" style={{ animationDelay: '100ms' }}>
         <div className="grid grid-cols-3 gap-3">
-          <div className="surface-card-sm text-center">
+           <button type="button" onClick={() => setScreen('modules')} className="surface-card-sm interactive-card text-center">
             <p className="text-2xl font-black text-white">{completedCount}</p>
             <p className="text-[10px] text-muted font-semibold mt-0.5">{t('modulesCompleted')}</p>
-          </div>
-          <div className="surface-card-sm text-center">
+           </button>
+           <button type="button" onClick={() => setScreen('modules')} className="surface-card-sm interactive-card text-center">
             <p className="text-2xl font-black text-white">{pendingCount}</p>
             <p className="text-[10px] text-muted font-semibold mt-0.5">{t('pendingModules')}</p>
-          </div>
-          <div className="surface-card-sm text-center">
+           </button>
+           <button type="button" onClick={() => setScreen('certificates')} className="surface-card-sm interactive-card text-center">
             <p className="text-2xl font-black text-caution">{certificatesEarned}</p>
             <p className="text-[10px] text-muted font-semibold mt-0.5">{t('earned')}</p>
-          </div>
+           </button>
         </div>
       </div>
 
@@ -107,11 +117,21 @@ export default function HomeScreen() {
           {modules.map((mod, i) => (
             <div
               key={mod.id}
-              className="surface-card-sm flex items-center gap-4 cursor-pointer hover:bg-surface-500 transition-colors active:scale-[0.99] animate-slide-up"
+              className="surface-card-sm interactive-card flex items-center gap-4 cursor-pointer animate-slide-up"
+              role="button"
+              tabIndex={0}
               style={{ animationDelay: `${250 + i * 80}ms` }}
               onClick={() => {
                 if (mod.status === 'in-progress' || mod.status === 'available') {
                   setScreen(mod.id === 'fire' ? 'fire-ar' : 'gas-ar');
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  if (mod.status === 'in-progress' || mod.status === 'available') {
+                    setScreen(mod.id === 'fire' ? 'fire-ar' : 'gas-ar');
+                  }
                 }
               }}
             >
