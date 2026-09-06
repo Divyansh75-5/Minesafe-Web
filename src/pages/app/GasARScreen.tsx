@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import CameraARView from '../../components/ui/CameraARView';
+import { useColorDetection } from '../../hooks/useColorDetection';
 
 export default function GasARScreen() {
   const { setScreen, t } = useApp();
   const [step, setStep] = useState(0);
-  const [gasLevel, setGasLevel] = useState(85);
   const [timer, setTimer] = useState(240);
+  const videoRef = useRef<HTMLVideoElement | null>(null) as React.MutableRefObject<HTMLVideoElement | null>;
+  const detect = useColorDetection(videoRef, true, 300);
+  const gasLevel = detect.reading;
+  const gasColor = detect.color;
 
   useEffect(() => {
     const iv = setInterval(() => setTimer(p => Math.max(0, p - 1)), 1000);
@@ -27,19 +31,16 @@ export default function GasARScreen() {
 
   const handleAction = () => {
     if (step < 2) {
-      setGasLevel(prev => Math.max(10, prev - 35));
       setStep(step + 1);
     } else {
       setScreen('assessment');
     }
   };
 
-  const gasColor = gasLevel > 60 ? '#eab308' : gasLevel > 30 ? '#f97316' : '#22c55e';
-
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
       {/* Live AR Camera View (falls back to simulated if unavailable) with gas overlays */}
-      <CameraARView>
+      <CameraARView videoElRef={videoRef}>
         {/* Swirling gas vapor cloud (thins as the gas is cleared) */}
         <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center" style={{ opacity: Math.max(0, gasLevel / 100) }}>
           <div className="relative w-56 h-56">

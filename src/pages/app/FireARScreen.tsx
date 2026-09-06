@@ -1,14 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import CameraARView from '../../components/ui/CameraARView';
-import { useFireDetection } from '../../hooks/useFireDetection';
+import { useColorDetection } from '../../hooks/useColorDetection';
 
 export default function FireARScreen() {
   const { setScreen, t } = useApp();
   const [step, setStep] = useState(0);
   const [timer, setTimer] = useState(180);
   const videoRef = useRef<HTMLVideoElement | null>(null) as React.MutableRefObject<HTMLVideoElement | null>;
-  const fire = useFireDetection(videoRef, true, 300);
+  const detect = useColorDetection(videoRef, true, 300);
+  const fireDetected = detect.severity === 'danger';
+  const riskColor = fireDetected || detect.severity === 'warning' ? '#ef4444' : '#22c55e';
+  const riskLabel = fireDetected || detect.severity === 'warning' ? t('high') : t('low');
 
   useEffect(() => {
     const iv = setInterval(() => setTimer(p => Math.max(0, p - 1)), 1000);
@@ -40,34 +43,22 @@ export default function FireARScreen() {
       {/* Live AR Camera View (falls back to simulated if unavailable) */}
       <CameraARView videoElRef={videoRef}>
         {/* Real-time fire detection bounding box */}
-        {fire.detected && fire.box && (
+        {fireDetected && detect.box && (
           <div
             className="absolute border-2 border-red-500 z-10 pointer-events-none"
             style={{
-              left: `${fire.box.x * 100}%`,
-              top: `${fire.box.y * 100}%`,
-              width: `${fire.box.width * 100}%`,
-              height: `${fire.box.height * 100}%`,
+              left: `${detect.box.x * 100}%`,
+              top: `${detect.box.y * 100}%`,
+              width: `${detect.box.width * 100}%`,
+              height: `${detect.box.height * 100}%`,
               boxShadow: '0 0 12px rgba(239,68,68,0.8)',
             }}
           >
             <span className="absolute -top-6 left-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-              FIRE {(fire.box.confidence * 100).toFixed(0)}%
+              FIRE {(detect.box.confidence * 100).toFixed(0)}%
             </span>
           </div>
         )}
-
-        {/* Simulated fire hazard overlay (shrinks as the fire is put out) */}
-        <div className="absolute inset-0 pointer-events-none z-10 flex items-end justify-center pb-28">
-          <div className="relative transition-all duration-700" style={{ width: 52 * (3 - step) * 0.9, height: 56 * (3 - step) * 0.9 }}>
-            <div className="absolute inset-0 rounded-full bg-orange-500/25 blur-2xl anim-glow-pulse" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-24 rounded-b-full bg-gradient-to-t from-amber-500 via-orange-500 to-yellow-300 anim-flame" style={{ animationDelay: '0s' }} />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-20 rounded-b-full bg-gradient-to-t from-orange-600 via-orange-400 to-amber-200 anim-flame" style={{ animationDelay: '0.25s' }} />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-16 rounded-b-full bg-gradient-to-t from-red-500 via-orange-400 to-yellow-200 anim-flame" style={{ animationDelay: '0.5s' }} />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-10 rounded-b-full bg-yellow-300/90 anim-flame" style={{ animationDelay: '0.1s' }} />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-4 rounded-full bg-amber-300/60 blur-md" />
-          </div>
-        </div>
       </CameraARView>
 
       {/* HUD Top Bar */}
@@ -83,8 +74,8 @@ export default function FireARScreen() {
         </button>
 
         <div className="hud-element !px-3 !py-2 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-danger animate-pulse" />
-          <span className="text-danger font-bold text-xs">{t('high')}</span>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: riskColor }} />
+          <span className="font-bold text-xs" style={{ color: riskColor }}>{riskLabel}</span>
         </div>
 
         <div className="hud-element !px-3 !py-2">
@@ -93,7 +84,7 @@ export default function FireARScreen() {
       </div>
 
       {/* Fire detection alert banner */}
-      {fire.detected && (
+      {fireDetected && (
         <div className="absolute top-20 left-5 right-5 z-20">
           <div className="hud-element border-red-500/50 !bg-red-950/80 flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
