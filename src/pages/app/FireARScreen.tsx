@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import CameraARView from '../../components/ui/CameraARView';
 
 type FireClass = 'A' | 'B' | 'C' | 'D';
 
@@ -130,17 +131,18 @@ export default function FireARScreen() {
 
   return (
     <div className="mobile-shell flex flex-col min-h-screen bg-surface-900 relative">
-      {/* Simulated fire scene (no live camera) */}
+      {/* Live rear-camera layer with the same simulated training overlays above it */}
+      <CameraARView />
       <div
         ref={sceneRef}
-        className="absolute inset-0 overflow-hidden select-none"
+        className="absolute inset-0 z-[1] overflow-hidden select-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
         {/* Background room */}
-        <div className="absolute inset-0 bg-gradient-to-br from-surface-800 via-surface-900 to-black" />
+        <div className="absolute inset-0 bg-black/10" />
         <div className="absolute inset-0 opacity-[0.05]" style={{
           backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
